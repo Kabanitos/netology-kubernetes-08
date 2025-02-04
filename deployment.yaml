@@ -1,0 +1,79 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dphome
+spec:
+  selector:
+    matchLabels:
+      app: nginx-multi
+  template:
+    metadata:
+      labels:
+        app: nginx-multi
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        volumeMounts:
+        - name: nginx-vl
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: nginx-vl
+        configMap:
+          name: nginx-cfm
+      
+
+      - name: multitool
+        image: wbitt/network-multitool
+        env:
+        - name: HTTP_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: nginx-cfm
+              key: HTTP_PORT
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-cfm
+data:
+  HTTP_PORT: "8080"
+  index.html: |
+    <html>
+    <body>
+      <h1>Hello Netology</h1>
+    </body>
+    </html>
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-nginx
+spec:
+  selector:
+    app: nginx-multi
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+spec:
+  rules:
+  - host: netology.loc
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: svc-nginx
+            port: 
+              number: 80
