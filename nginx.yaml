@@ -6,11 +6,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: nginx-multi
+      app: web-nginx
   template:
     metadata:
       labels:
-        app: nginx-multi
+        app: web-nginx
     spec:
       containers:
       - name: nginx
@@ -18,15 +18,6 @@ spec:
         volumeMounts:
         - name: nginx-vl
           mountPath: /usr/share/nginx/html
-
-      - name: multitool
-        image: wbitt/network-multitool
-        env:
-        - name: HTTP_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: cfm
-              key: HTTP_PORT
       volumes:
       - name: nginx-vl
         configMap:
@@ -38,7 +29,6 @@ kind: ConfigMap
 metadata:
   name: cfm
 data:
-  HTTP_PORT: "8080"
   index.html: |
     <html>
     <body>
@@ -50,10 +40,10 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: svc-nginx
+  name: svcnginx
 spec:
   selector:
-    app: nginx-multi
+    app: web-nginx
   ports:
   - port: 80
     targetPort: 80
@@ -67,13 +57,17 @@ metadata:
   name: nginx-ingress
 spec:
   rules:
-  - host: netology.mil
+  - host: netology1.mil
     http:
       paths:
       - pathType: Prefix
         path: "/"
         backend:
           service:
-            name: svc-nginx
+            name: svcnginx
             port: 
               number: 80
+  tls:
+    - hosts:
+      - netology1.mil
+      secretName: mysecret-tls
